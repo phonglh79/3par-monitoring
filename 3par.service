@@ -1,0 +1,12 @@
+[Unit]
+Description=3par monitoring daemon
+After=network.target
+After=syslog.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/3par-daemon
+ExecStop=/bin/kill -HUP $MAINPID
+
+[Install]
+WantedBy=multi-user.target
