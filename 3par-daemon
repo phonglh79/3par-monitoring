@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+#
+# 3par-daemon
+# This file is part of 3par monitoring.
+# 3par monitoring is a shell based client to obtain and gather 3par StoreServ
+# storage array statistics by using CLI and ssh.
+#
+# Copyright (C) 2017 Robert M Holyst
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Log file path
+LOG="/var/log/3par.log"
+
+# Sourcing config
+if [[ ! -f /etc/3par/3par.cfg ]]; then
+	echo "$(date --rfc-3339=seconds) [ERR] Config file does not exist." >> ${LOG}
+	exit 1
+fi
+source /etc/3par/3par.cfg
+
+echo "$(date --rfc-3339=seconds) [INFO] Daemon is being starting up." >> ${LOG}
+
+# Locking daemon
+exec 200>/var/lock/subsys/3par.lock
+
+flock -n 200
+if [[ $? -ne 0 ]]; then
+	echo "$(date --rfc-3339=seconds) [ERR] Another daemon process is attempting to be started" >> ${LOG}
+	exit 1
+fi
+
+# Handling signals
+trap '
+	echo "$(date --rfc-3339=seconds) [INFO] A signal has been received. Daemon is being shutting down." >> ${LOG}
+
+	# Stopping all connections and removing the socket
+	for ((PROCESS=0; PROCESS<${#ARRAY[*]}; PROCESS++)); do
+		ssh -O exit -S ${SOCKET[$PROCESS]} -i ${KEY[$PROCESS]} -l ${USER[$PROCESS]} ${ARRAY[$PROCESS]}
+		if [[ $? -ne 0 ]]; then
+			echo "$(date --rfc-3339=seconds) [WARN] Some of ${ARRAY[$PROCESS]} connections have not been closed." >> ${LOG}
+		fi
+	done
+
+	# Removing the lock file
+	flock -u 200
+	rm -rf /var/lock/subsys/3par.lock
+	if [[ $? -ne 0 ]]; then
+		echo "$(date --rfc-3339=seconds) [ERR] The lock file has not been removed." >> ${LOG}
+		exit 1
+	fi
+
+	exit 0
+' 1 2 3 15
+
+# Establishing storage array's connections
+for ((CONNECTION=0; CONNECTION<${#ARRAY[*]}; CONNECTION++)); do
+	ssh -Nf -M -S ${SOCKET[$CONNECTION]} -o ExitOnForwardFailure=yes -i ${KEY[$CONNECTION]} -l ${USER[$CONNECTION]} ${ARRAY[$CONNECTION]}
+	if [[ $? -ne 0 ]]; then
+		echo "$(date --rfc-3339=seconds) [ERR] Storage array ${ARRAY[$CONNECTION]} is unavailable." >> ${LOG}
+		kill $$
+	fi
+done
+
+# Keeping daemon up and running
+while :; do
+	sleep 1 &
+	wait
+done
+
+kill $$
