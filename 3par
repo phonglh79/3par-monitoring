@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+#
+# 3par
+# This file is part of 3par monitoring.
+# 3par monitoring is a shell based client to obtain and gather 3par StoreServ
+# storage array statistics by using CLI and ssh.
+#
+# Copyright (C) 2017 Robert M Holyst
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Sourcing config
+if [[ ! -f /etc/3par/3par.cfg ]]; then
+	printf '\n%s\n\n' "Config file does not exist".
+	exit 1
+fi
+source /etc/3par/3par.cfg
+
+# Handling positional parameters
+if [[ $# -eq 0 ]]; then
+	printf '\n%s\n\n' "3par [options] <parameter> [<parameter arguments>]"
+	printf '%s\n' "OPTIONS:"
+	printf '%s\t%s\n\t\t%s\n' "-a <array>" "Storage array number in config file. If not specified 0 will" "be used."
+	printf '\n%s\n\n' "Please refer to 3par man for parameters"
+	exit 0
+fi
+
+if [[ $1 == "-a" ]]; then
+	if ! [[ $2 =~ ^[0-9] ]]; then
+		printf '\n%s\n\n' "-a option needs an integer to be provided"
+		exit 1
+	fi
+
+	NUMBER=$2
+	shift 2
+else
+	NUMBER=0
+fi
+
+# Creating connection syntax
+CONNECTION="ssh -S ${SOCKET[$NUMBER]} -i ${KEY[$NUMBER]} -l ${USER[$NUMBER]} ${ARRAY[$NUMBER]}"
+
+# Statistics
+case $1 in
+	sys_serial)
+		OUTPUT=$(${CONNECTION} 'showsys -d' 2>/dev/null)
+		if [[ $? -ne 0 ]]; then
+			printf '\n%s\n\n' "Storage array is unavailable"
+			exit 1
+		fi
+		awk -F":" '/^Serial/ {gsub(" ",""); print $2}' <<< "${OUTPUT}"
+		;;
+
+	sys_id)
+                OUTPUT=$(${CONNECTION} 'showsys -d' 2>/dev/null)
+                if [[ $? -ne 0 ]]; then
+                        printf '\n%s\n\n' "Storage array is unavailable"
+                        exit 1
+                fi
+                awk -F":" '/^System ID/ {gsub(" ",""); print $2}' <<< "${OUTPUT}"
+                ;;
+
+	sys_node_number)
+                OUTPUT=$(${CONNECTION} 'showsys -d' 2>/dev/null)
+                if [[ $? -ne 0 ]]; then
+                        printf '\n%s\n\n' "Storage array is unavailable"
+                        exit 1
+                fi
+                awk -F":" '/^Number/ {gsub(" ",""); print $2}' <<< "${OUTPUT}"
+                ;;
+
+	sys_node_master)
+                OUTPUT=$(${CONNECTION} 'showsys -d' 2>/dev/null)
+                if [[ $? -ne 0 ]]; then
+                        printf '\n%s\n\n' "Storage array is unavailable"
+                        exit 1
+                fi
+                awk -F":" '/^Master/ {gsub(" ",""); print $2}' <<< "${OUTPUT}"
+                ;;
+
+	sys_node_online)
+                OUTPUT=$(${CONNECTION} 'showsys -d' 2>/dev/null)
+                if [[ $? -ne 0 ]]; then
+                        printf '\n%s\n\n' "Storage array is unavailable"
+                        exit 1
+                fi
+                awk -F":" '/Online/ {gsub(" ",""); print $2}' <<< "${OUTPUT}"
+                ;;
+
+	sys_node_cluster)
+                OUTPUT=$(${CONNECTION} 'showsys -d' 2>/dev/null)
+                if [[ $? -ne 0 ]]; then
+                        printf '\n%s\n\n' "Storage array is unavailable"
+                        exit 1
+                fi
+                awk -F":" '/Cluster/ {gsub(" ",""); print $2}' <<< "${OUTPUT}"
+                ;;
+
+	*)
+		printf '\n%s\n\n' "Unrecognized parameter"
+		exit 1
+		;;
+esac
+
+exit 0
