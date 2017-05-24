@@ -1,0 +1,92 @@
+.TH man 1 "22 May 2017" "1.0" "3par man page"
+.SH NAME
+3par \- obtain 3par StoreServ storage array statistics
+.SH SYNOPSIS
+\fB3par
+.RB [\| \-a
+.IR array \|]
+.B parameter
+.RI [\| arguments \|]
+.SH DESCRIPTION
+3par monitoring is a shell based client to obtain and gather 3par StoreServ storage array statistics by using CLI and ssh.
+.SH OPTIONS
+.TP
+\fB\-a \fIarray
+Storage array number in config file. If not specified 0 will be used.
+.SH PARAMETERS
+.TP
+\fB sys_serial
+Storage array serial number
+.TP
+\fB sys_id
+Storage array ID
+.TP
+\fB sys_node_number
+A total number of nodes
+.TP
+\fB sys_node_master
+A node number which acts as a master
+.TP
+\fB sys_node_online
+A list of all nodes that are online
+.TP
+\fB sys_node_cluster
+A list of all nodes that are clustered
+.TP
+\fB capacity_total
+Total storage array capacity in MiB
+.TP
+\fB capacity_allocated_total
+Total allocated space in MiB
+.TP
+\fB capacity_allocated_volumes
+Total allocated volumes space in MiB
+.TP
+\fB capacity_allocated_system
+Total allocated system space in MiB
+.TP
+\fB capacity_free
+Total free space in MiB
+.TP
+\fB capacity_unavailable
+Total unavailable space in MiB
+.TP
+\fB capacity_failed
+Total failed capacity in MiB
+.TP
+\fB node_state \fInode
+Node state. Node number is required
+.TP
+\fB node_temp_ambient \fInode
+A node ambient temperature in degrees of C. Node number is required
+.TP
+\fB node_temp_midplane \fInode
+A node midplane temperature in degrees of C. Node number is required
+.TP
+\fB ps_state \fInode \fIps
+A power supply state. Node and PS numbers are required
+.TP
+\fB ps_ac_state \fInode \fIps
+A power supply AC state. Node and PS numbers are required
+.TP
+\fB ps_dc_state \fInode \fIps
+A power supply DC state. Node and PS numbers are required
+.TP
+\fB ps_bat_state \fInode \fIps
+A power supply battery state. Node and PS numbers are required
+.TP
+\fB ps_fan_state \fInode \fIps
+A power supply fan state. Node and PS numbers are required
+.TP
+\fB ps_charge_level \fInode \fIps
+A power supply battery charge level in %. Node and PS numbers are required
+.SH EXAMPLES
+.TP
+Obtaining serial number for storage array which is configured as ARRAY[0]
+.B 3par sys_serial
+.TP
+Obtaining serial number for storage array which is configured as ARRAY[1]
+.B 3par -a 1 sys_serial
+.TP
+Obtaining node 2 ambient temperature for storage array ARRAY[1]
+.B 3par -a 1 node_temp_ambient 2
