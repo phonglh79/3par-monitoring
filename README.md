@@ -156,7 +156,7 @@ Obtaining node 2 ambient temperature for storage array ARRAY[1]
 3par -a 1 node_temp_ambient 2
 ```
 
-# Licence
+# LICENSE
 3par monitoring
 
 Copyright (C) 2017 Robert M Holyst
